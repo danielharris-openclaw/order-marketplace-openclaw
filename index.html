@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Биржа заказов</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#101820">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #101820;
+      --ink-2: #26323d;
+      --paper: #f6f3ec;
+      --panel: #fffdf7;
+      --muted: #6d746f;
+      --line: #d6d0c3;
+      --yellow: #f4d35e;
+      --aqua: #4ecdc4;
+      --red: #ee6352;
+      --green: #2f7d5b;
+      --shadow: 0 18px 45px rgba(16, 24, 32, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: Manrope, sans-serif;
+      background:
+        linear-gradient(rgba(16,24,32,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,24,32,.045) 1px, transparent 1px),
+        var(--paper);
+      background-size: 32px 32px;
+    }
+
+    button, input, textarea { font: inherit; }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      background: var(--yellow);
+      border: 2px solid var(--ink);
+      box-shadow: 5px 5px 0 var(--aqua);
+      font: 800 18px/1 "IBM Plex Mono", monospace;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .button {
+      border: 2px solid var(--ink);
+      min-height: 44px;
+      padding: 10px 14px;
+      color: var(--ink);
+      background: var(--panel);
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 5px 5px 0 var(--ink);
+    }
+
+    .button.primary { background: var(--yellow); }
+    .button.dark { background: var(--ink); color: white; }
+    .button.ghost { background: transparent; }
+
+    .hero {
+      min-height: 430px;
+      padding: 54px 0 34px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: clamp(24px, 5vw, 68px);
+      align-items: end;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 820px;
+      font-size: clamp(42px, 7.4vw, 88px);
+      line-height: .92;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 22px 0 0;
+      max-width: 690px;
+      color: #313b43;
+      font-size: clamp(17px, 2vw, 21px);
+      line-height: 1.48;
+    }
+
+    .hero-panel {
+      background: var(--ink);
+      color: white;
+      border: 2px solid var(--ink);
+      box-shadow: 12px 12px 0 var(--red);
+      padding: 22px;
+    }
+
+    .mono {
+      font-family: "IBM Plex Mono", monospace;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .hero-panel .mono { color: var(--aqua); }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      min-height: 92px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,.24);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .stat strong {
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      margin: 8px 0 22px;
+      padding: 12px 0;
+      background: rgba(246,243,236,.86);
+      backdrop-filter: blur(12px);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+    }
+
+    .search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      padding: 0 14px;
+    }
+
+    .search input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      min-width: 0;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      min-height: 48px;
+      padding: 0 13px;
+      font: 700 12px "IBM Plex Mono", monospace;
+      cursor: pointer;
+    }
+
+    .chip.active { background: var(--aqua); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 20px;
+      align-items: start;
+      padding-bottom: 56px;
+    }
+
+    .orders {
+      display: grid;
+      gap: 14px;
+    }
+
+    .order-card {
+      background: var(--panel);
+      border: 2px solid var(--ink);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      animation: reveal .42s ease both;
+    }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .order-title {
+      margin: 0;
+      font-size: clamp(20px, 2.5vw, 28px);
+      line-height: 1.1;
+    }
+
+    .order-desc {
+      margin: 10px 0 14px;
+      color: #39444c;
+      line-height: 1.5;
+    }
+
+    .order-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 30px;
+      padding: 5px 9px;
+      border: 1px solid var(--line);
+      background: #f8f1dc;
+      color: var(--ink-2);
+      font: 700 12px "IBM Plex Mono", monospace;
+    }
+
+    .tag.status-active { background: #e8f6ef; border-color: rgba(47,125,91,.35); color: var(--green); }
+    .tag.status-in_work { background: #e7f8f7; border-color: rgba(78,205,196,.55); color: #16706a; }
+    .tag.status-closed { background: #eee9df; border-color: #c7c0b4; color: #6f716b; }
+
+    .people {
+      display: grid;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-left: 4px solid var(--aqua);
+      background: rgba(78,205,196,.12);
+      color: var(--ink-2);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .price {
+      min-width: 132px;
+      text-align: right;
+    }
+
+    .price strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+
+    .card-actions {
+      display: grid;
+      gap: 8px;
+    }
+
+    .responses {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .side {
+      position: sticky;
+      top: 84px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .form-panel, .info-panel {
+      background: var(--panel);
+      border: 2px solid var(--ink);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .panel-title {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      color: var(--ink-2);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 2px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      padding: 11px 12px;
+      outline: 0;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    textarea {
+      min-height: 94px;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(78,205,196,.25);
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .empty {
+      border: 2px dashed var(--ink);
+      background: rgba(255,253,247,.72);
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    dialog {
+      width: min(520px, calc(100% - 24px));
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      color: var(--ink);
+      padding: 0;
+      box-shadow: 14px 14px 0 var(--ink);
+    }
+
+    dialog::backdrop { background: rgba(16,24,32,.55); }
+
+    .modal-head {
+      padding: 16px 18px;
+      border-bottom: 2px solid var(--ink);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      background: var(--yellow);
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .modal-body { padding: 18px; }
+
+    .icon-button {
+      width: 38px;
+      height: 38px;
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 10;
+      max-width: 360px;
+      padding: 13px 15px;
+      border: 2px solid var(--ink);
+      background: var(--aqua);
+      box-shadow: 7px 7px 0 var(--ink);
+      font-weight: 800;
+      transform: translateY(24px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 920px) {
+      .hero, .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-panel, .side {
+        position: static;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .filters { justify-content: flex-start; }
+    }
+
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 22px, 1180px); }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 0;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 24px;
+      }
+
+      .order-card, .two {
+        grid-template-columns: 1fr;
+      }
+
+      .price {
+        text-align: left;
+        min-width: 0;
+      }
+
+      .button, .chip {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell topbar">
+    <div class="brand" aria-label="Биржа заказов">
+      <div class="brand-mark">БЗ</div>
+      <div>
+        <div>Биржа заказов</div>
+        <div class="mono">заказчики + исполнители</div>
+      </div>
+    </div>
+    <nav class="top-actions" aria-label="Основные действия">
+      <a class="button ghost" href="#orders">Смотреть заказы</a>
+      <a class="button primary" href="#create">Разместить заказ</a>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div>
+        <h1 id="page-title">Витрина работ без лишних кругов</h1>
+        <p class="lead">Заказчик публикует задачу с бюджетом и сроком. Исполнитель откликается, оставляет имя и телефон. Все актуальные заявки видны в одном списке.</p>
+      </div>
+      <aside class="hero-panel" aria-label="Сводка">
+        <div class="mono">сейчас на площадке</div>
+        <div class="hero-stats">
+          <div class="stat"><strong id="statOrders">0</strong><span>активных заказов</span></div>
+          <div class="stat"><strong id="statResponses">0</strong><span>откликов</span></div>
+          <div class="stat"><strong id="statBudget">0 ₽</strong><span>общий бюджет</span></div>
+          <div class="stat"><strong id="statFresh">0</strong><span>новых сегодня</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="toolbar" aria-label="Поиск и фильтры">
+      <div class="search">
+        <span aria-hidden="true">⌕</span>
+        <input id="searchInput" type="search" placeholder="Поиск по названию, сути, телефону">
+      </div>
+      <div class="filters" role="group" aria-label="Фильтр по статусу">
+        <button class="chip active" data-filter="all" type="button">Все</button>
+        <button class="chip" data-filter="active" type="button">Актуальны</button>
+        <button class="chip" data-filter="in_work" type="button">В работе</button>
+        <button class="chip" data-filter="closed" type="button">Закрыты</button>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div>
+        <div id="orders" class="orders" aria-live="polite"></div>
+      </div>
+
+      <aside class="side" id="create">
+        <form class="form-panel" id="orderForm">
+          <h2 class="panel-title">Новый заказ</h2>
+          <div class="field">
+            <label for="title">Название</label>
+            <input id="title" name="title" required placeholder="Например: ремонт санузла">
+          </div>
+          <div class="field">
+            <label for="summary">Краткая суть</label>
+            <textarea id="summary" name="summary" required placeholder="Что нужно сделать, важные детали, адрес или район"></textarea>
+          </div>
+          <div class="two">
+            <div class="field">
+              <label for="deadline">Срок выполнения</label>
+              <input id="deadline" name="deadline" required placeholder="До 15 июня">
+            </div>
+            <div class="field">
+              <label for="price">Цена</label>
+              <input id="price" name="price" required inputmode="numeric" placeholder="45000">
+            </div>
+          </div>
+          <div class="field">
+            <label for="phone">Телефон заказчика</label>
+            <input id="phone" name="phone" required inputmode="tel" placeholder="+7 999 000-00-00">
+          </div>
+          <button class="button dark" type="submit">Опубликовать заказ</button>
+        </form>
+
+        <div class="info-panel">
+          <h2 class="panel-title">Что уже заложено</h2>
+          <p>Публикация заказов, список актуальных заявок, поиск, фильтры, отклики исполнителей и хранение данных в Google Sheets.</p>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <dialog id="responseDialog">
+    <form method="dialog">
+      <div class="modal-head">
+        <h2>Откликнуться на заказ</h2>
+        <button class="icon-button" value="cancel" aria-label="Закрыть">×</button>
+      </div>
+    </form>
+    <form class="modal-body" id="responseForm">
+      <input type="hidden" id="responseOrderId">
+      <div class="field">
+        <label for="performerName">Имя исполнителя</label>
+        <input id="performerName" required placeholder="Иван">
+      </div>
+      <div class="field">
+        <label for="performerPhone">Телефон исполнителя</label>
+        <input id="performerPhone" required inputmode="tel" placeholder="+7 999 111-22-33">
+      </div>
+      <button class="button primary" type="submit">Отправить отклик</button>
+    </form>
+  </dialog>
+
+  <dialog id="closeDialog">
+    <form method="dialog">
+      <div class="modal-head">
+        <h2>Закрыть заявку</h2>
+        <button class="icon-button" value="cancel" aria-label="Закрыть">×</button>
+      </div>
+    </form>
+    <form class="modal-body" id="closeForm">
+      <input type="hidden" id="closeOrderId">
+      <div class="field">
+        <label for="customerPhone">Телефон заказчика</label>
+        <input id="customerPhone" required inputmode="tel" placeholder="+7 999 000-00-00">
+      </div>
+      <button class="button dark" type="submit">Перевести в закрыта</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const apiUrl = 'https://script.google.com/macros/s/AKfycbzgsSFDgl86brj1Co-Yf1c65crr02EUiJeF_RyWg95YoNHw70qlMLljukJAplvEiDaVBg/exec';
+    let state = [];
+    let activeFilter = 'all';
+
+    const ordersEl = document.querySelector('#orders');
+    const searchInput = document.querySelector('#searchInput');
+    const orderForm = document.querySelector('#orderForm');
+    const responseDialog = document.querySelector('#responseDialog');
+    const responseForm = document.querySelector('#responseForm');
+    const closeDialog = document.querySelector('#closeDialog');
+    const closeForm = document.querySelector('#closeForm');
+    const toastEl = document.querySelector('#toast');
+
+    function money(value) {
+      return new Intl.NumberFormat('ru-RU').format(Number(value || 0)) + ' ₽';
+    }
+
+    function normalize(value) {
+      return String(value || '').toLowerCase().trim();
+    }
+
+    function isUrgent(order) {
+      return /срочно|сегодня|завтра|2 дня|дв[ау] дня/i.test(order.deadline + ' ' + order.summary);
+    }
+
+    function statusLabel(status) {
+      return {
+        active: 'актуальна',
+        in_work: 'в работе',
+        closed: 'закрыта'
+      }[status] || 'актуальна';
+    }
+
+    function filteredOrders() {
+      const query = normalize(searchInput.value);
+      return state
+        .filter(order => {
+          if (activeFilter !== 'all' && (order.status || 'active') !== activeFilter) return false;
+          if (!query) return true;
+          return [order.title, order.summary, order.deadline, order.phone].some(item => normalize(item).includes(query));
+        })
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    function render() {
+      const list = filteredOrders();
+      ordersEl.innerHTML = list.length ? list.map(orderTemplate).join('') : '<div class="empty">Актуальных заказов пока нет. Первый реальный заказ появится здесь после публикации.</div>';
+      updateStats();
+    }
+
+    function orderTemplate(order) {
+      const responses = order.responses?.length || 0;
+      const status = order.status || 'active';
+      const performer = order.responses?.[0];
+      const canRespond = status === 'active';
+      const canClose = status !== 'closed';
+      return `
+        <article class="order-card">
+          <div>
+            <h2 class="order-title">${escapeHtml(order.title)}</h2>
+            <p class="order-desc">${escapeHtml(order.summary)}</p>
+            <div class="order-meta">
+              <span class="tag status-${status}">статус: ${statusLabel(status)}</span>
+              <span class="tag">срок: ${escapeHtml(order.deadline)}</span>
+              <span class="tag">тел: ${escapeHtml(order.phone)}</span>
+              ${isUrgent(order) ? '<span class="tag">срочно</span>' : ''}
+            </div>
+            ${status === 'in_work' && performer ? `
+              <div class="people">
+                <div>Заказчик: ${escapeHtml(order.phone)}</div>
+                <div>Исполнитель: ${escapeHtml(performer.name)} · ${escapeHtml(performer.phone)}</div>
+              </div>
+            ` : ''}
+            ${status === 'closed' ? '<div class="people">Заявка закрыта заказчиком.</div>' : ''}
+            <div class="responses">${responses ? 'Откликов: ' + responses : 'Откликов пока нет'}</div>
+          </div>
+          <div class="price">
+            <strong>${money(order.price)}</strong>
+            <div class="card-actions">
+              ${canRespond ? `<button class="button primary" type="button" data-respond="${order.id}">Откликнуться</button>` : ''}
+              ${canClose ? `<button class="button ghost" type="button" data-close="${order.id}">Закрыть</button>` : ''}
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function updateStats() {
+      const totalResponses = state.reduce((sum, order) => sum + (order.responses?.length || 0), 0);
+      const totalBudget = state.reduce((sum, order) => sum + Number(order.price || 0), 0);
+      const today = new Date().toDateString();
+      const fresh = state.filter(order => new Date(order.createdAt).toDateString() === today).length;
+      document.querySelector('#statOrders').textContent = state.filter(order => (order.status || 'active') !== 'closed').length;
+      document.querySelector('#statResponses').textContent = totalResponses;
+      document.querySelector('#statBudget').textContent = money(totalBudget);
+      document.querySelector('#statFresh').textContent = fresh;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#039;',
+        '"': '&quot;'
+      }[char]));
+    }
+
+    function showToast(text) {
+      toastEl.textContent = text;
+      toastEl.classList.add('show');
+      window.setTimeout(() => toastEl.classList.remove('show'), 2400);
+    }
+
+    async function apiRequest(payload = {}) {
+      if (!apiUrl) {
+        throw new Error('API пока не подключен. Добавьте URL Google Apps Script в переменную apiUrl.');
+      }
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!data.ok) throw new Error(data.error || 'Не удалось выполнить запрос');
+      return data;
+    }
+
+    async function loadOrders() {
+      try {
+        const data = await apiRequest({ action: 'list' });
+        state = data.orders || [];
+      } catch (error) {
+        state = [];
+        showToast(error.message);
+      }
+      render();
+    }
+
+    orderForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = new FormData(orderForm);
+      const payload = {
+        action: 'createOrder',
+        title: form.get('title'),
+        summary: form.get('summary'),
+        deadline: form.get('deadline'),
+        price: Number(String(form.get('price')).replace(/\D/g, '')) || 0,
+        phone: form.get('phone')
+      };
+      try {
+        await apiRequest(payload);
+        orderForm.reset();
+        await loadOrders();
+        showToast('Заказ опубликован');
+        location.hash = '#orders';
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    ordersEl.addEventListener('click', event => {
+      const responseButton = event.target.closest('[data-respond]');
+      if (responseButton) {
+        document.querySelector('#responseOrderId').value = responseButton.dataset.respond;
+        responseDialog.showModal();
+        return;
+      }
+
+      const closeButton = event.target.closest('[data-close]');
+      if (closeButton) {
+        document.querySelector('#closeOrderId').value = closeButton.dataset.close;
+        closeDialog.showModal();
+      }
+    });
+
+    responseForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const orderId = document.querySelector('#responseOrderId').value;
+      try {
+        await apiRequest({
+          action: 'createResponse',
+          orderId,
+          name: document.querySelector('#performerName').value,
+          phone: document.querySelector('#performerPhone').value
+        });
+        responseForm.reset();
+        responseDialog.close();
+        await loadOrders();
+        showToast('Отклик отправлен заказчику в список');
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    closeForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        await apiRequest({
+          action: 'closeOrder',
+          orderId: document.querySelector('#closeOrderId').value,
+          customerPhone: document.querySelector('#customerPhone').value
+        });
+        closeForm.reset();
+        closeDialog.close();
+        await loadOrders();
+        showToast('Заявка закрыта');
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.chip').forEach(item => item.classList.remove('active'));
+        chip.classList.add('active');
+        activeFilter = chip.dataset.filter;
+        render();
+      });
+    });
+
+    searchInput.addEventListener('input', render);
+    loadOrders();
+  </script>
+</body>
+</html>
